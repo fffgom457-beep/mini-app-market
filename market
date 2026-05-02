@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Маркет подарков — Сезон #2</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background: #0f0f1a;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            padding: 16px 12px 100px;
+            color: #eef2ff;
+        }
+
+        /* главный контейнер — как Telegram WebApp */
+        .app {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        /* карточка сезона */
+        .season-badge {
+            background: linear-gradient(135deg, #2a2a3a, #1a1a2a);
+            border-radius: 20px;
+            padding: 12px 18px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 1.4rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            border: 1px solid #2e3a5e;
+        }
+
+        /* баланс и кнопка обмена */
+        .top-bar {
+            background: #1e1e2c;
+            border-radius: 28px;
+            padding: 12px 18px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .stars-balance {
+            background: #2a2a3c;
+            padding: 6px 16px;
+            border-radius: 40px;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        .stars-balance span {
+            color: #ffd966;
+        }
+        .exchange-btn {
+            background: #3b3b5c;
+            border: none;
+            color: white;
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .exchange-btn:active { background: #52527a; transform: scale(0.97);}
+
+        /* сетка подарков */
+        .gifts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 14px;
+            margin: 20px 0;
+        }
+
+        .gift-card {
+            background: #161622;
+            border-radius: 20px;
+            padding: 14px 10px;
+            text-align: center;
+            border: 1px solid #2c2c40;
+            transition: 0.1s linear;
+            cursor: pointer;
+        }
+        .gift-card:active { background: #1f1f30; transform: scale(0.98);}
+
+        .gift-name {
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 6px;
+            color: #fff;
+        }
+        .gift-id {
+            font-size: 0.75rem;
+            color: #9ca3af;
+            background: #0a0a12;
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 30px;
+            margin-top: 6px;
+        }
+        .gift-price {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            background: #0e0e18;
+            padding: 5px;
+            border-radius: 30px;
+            font-weight: 500;
+        }
+        .ton-symbol {
+            color: #0088cc;
+        }
+
+        /* блоки корзины */
+        .cart-section {
+            background: #1a1a28;
+            border-radius: 28px;
+            padding: 18px;
+            margin-top: 30px;
+            border: 1px solid #2e3a5e;
+        }
+        .cart-header {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+        .cart-empty {
+            color: #6b7280;
+            text-align: center;
+            padding: 20px;
+        }
+        .cart-total {
+            border-top: 1px solid #2e2e44;
+            margin-top: 12px;
+            padding-top: 12px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+        }
+        .buy-btn {
+            background: #2c6e2c;
+            width: 100%;
+            margin-top: 16px;
+            padding: 14px;
+            border: none;
+            color: white;
+            font-weight: bold;
+            border-radius: 60px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        .buy-btn:active { background: #1e551e; transform: scale(0.98);}
+        .disabled-btn {
+            background: #3a3a4a;
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        /* тулбар снизу (вывод/продажа) */
+        .action-bar {
+            display: flex;
+            gap: 12px;
+            margin: 20px 0 12px;
+        }
+        .action-btn {
+            flex: 1;
+            background: #25253a;
+            padding: 12px;
+            text-align: center;
+            border-radius: 44px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .action-btn:active { background: #35354e;}
+
+        /* модалка покупки */
+        .modal {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: #1e1e2e;
+            border-radius: 28px 28px 0 0;
+            padding: 24px 20px 30px;
+            z-index: 1000;
+            box-shadow: 0 -4px 20px black;
+            border-top: 1px solid #4a4a6a;
+        }
+        .modal.show { display: block; }
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 999;
+        }
+        .modal-overlay.show { display: block; }
+        .close-modal {
+            float: right;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <div class="season-badge">🎄 Сезон #2 ❄️</div>
+
+    <div class="top-bar">
+        <div class="stars-balance">⭐ <span id="starsAmount">0</span> Stars</div>
+        <button class="exchange-btn" id="exchangeBtn">🔄 Обмен Stars (100⭐ = 1 TON)</button>
+    </div>
+
+    <div class="action-bar">
+        <div class="action-btn" id="withdrawBtn">📤 Вывод подарков</div>
+        <div class="action-btn" id="sellBtn">💰 Продажа подарков</div>
+    </div>
+
+    <!-- список подарков (все из вашего описания) -->
+    <div class="gifts-grid" id="giftsGrid"></div>
+
+    <!-- корзина -->
+    <div class="cart-section">
+        <div class="cart-header">🛒 Корзина <span id="cartCount">0</span></div>
+        <div id="cartItems" class="cart-empty">Корзина пуста</div>
+        <div class="cart-total">Итого: <span id="cartTotal">0</span> TON</div>
+        <button class="buy-btn" id="checkoutBtn">💎 Купить подарки</button>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay"></div>
+<div class="modal" id="purchaseModal">
+    <button class="close-modal" id="closeModalBtn">✖</button>
+    <h3 style="margin-bottom: 12px;">❓ Подтверждение</h3>
+    <p id="modalText">Вы уверены, что хотите купить этот подарок?</p>
+    <button id="confirmPurchaseBtn" style="background:#2c6e2c; margin-top: 20px; width:100%; padding:12px; border:none; border-radius:40px; color:white; font-weight:bold;">✅ Да, купить</button>
+</div>
+
+<script>
+    // -------- ВСЕ ПОДАРКИ ИЗ ТВОЕГО СПИСКА (оригинальные имена + ID) --------
+    const rawGifts = [
+        { name: "Flying Broom", id: "#6160", priceTON: 0.5 },
+        { name: "Sleigh Bell", id: "#12287", priceTON: 0.3 },
+        { name: "Winter Wreath", id: "#37171", priceTON: 0.4 },
+        { name: "Prettyposy", id: "#24060", priceTON: 0.45 },
+        { name: "Astral Shard", id: "#3515", priceTON: 0.6 },
+        { name: "Jack In The Box", id: "#10806", priceTON: 0.7 },
+        { name: "Heart Locket", id: "#166", priceTON: 0.8 },
+        { name: "Sleigh Bell", id: "#1382", priceTON: 0.3 },
+        { name: "Ginger Cookie", id: "#100102", priceTON: 0.55 },
+        { name: "Snoop Dogg", id: "#377865", priceTON: 1.2 },
+        { name: "Valentine Box", id: "#10561", priceTON: 0.9 },
+        { name: "Cupid Charm", id: "#6478", priceTON: 0.65 },
+        { name: "Astral Shard", id: "#3273", priceTON: 0.6 },
+        { name: "Sharp Tongue", id: "#5814", priceTON: 0.4 },
+        { name: "Cookie Heart", id: "#107946", priceTON: 0.5 },
+        { name: "Snake Box", id: "#12366", priceTON: 0.75 },
+        { name: "Ionic Dryer", id: "#8177", priceTON: 0.35 },
+        { name: "Jester Hat", id: "#51627", priceTON: 0.48 },
+        { name: "Jolly Chimp", id: "#7819", priceTON: 0.9 },
+        { name: "Perfume Bottle", id: "#1923", priceTON: 0.44 },
+        { name: "Perfume Bottle", id: "#777", priceTON: 0.44 },
+        { name: "Snoop Cigar", id: "#108640", priceTON: 1.1 },
+        { name: "Plush Pepe", id: "#1662", priceTON: 0.85 },
+        { name: "Top Hat", id: "#6331", priceTON: 0.6 },
+        { name: "Swag Bag", id: "#143854", priceTON: 0.95 },
+        { name: "Vintage Cigar", id: "#8388", priceTON: 0.7 },
+        { name: "Mad Pumpkin", id: "#6662", priceTON: 0.5 },
+        { name: "Heroic Helmet", id: "#1177", priceTON: 0.68 },
+        { name: "Signet Ring", id: "#12338", priceTON: 0.55 },
+        { name: "Xmas Stocking", id: "#1282", priceTON: 0.4 },
+        { name: "Bow Tie", id: "#16267", priceTON: 0.3 },
+        { name: "Snoop Dogg", id: "#282993", priceTON: 1.2 },
+        { name: "Big Year", id: "#33618", priceTON: 0.77 },
+        { name: "Spiced Wine", id: "#7427", priceTON: 0.52 },
+        { name: "Berry Box", id: "#1036", priceTON: 0.6 },
+        { name: "Love Potion", id: "#9779", priceTON: 0.49 },
+        { name: "Snow Globe", id: "#1777", priceTON: 0.63 },
+        { name: "Scared Cat", id: "#18319", priceTON: 0.58 },
+        { name: "Jolly Chimp", id: "#66159", priceTON: 0.9 },
+        { name: "Spy Agaric", id: "#48398", priceTON: 0.7 },
+        { name: "Ionic Dryer", id: "#2122", priceTON: 0.35 },
+        { name: "Input Key", id: "#104838", priceTON: 0.42 },
+        { name: "Moneypot", id: "#25505", priceTON: 1.0 },
+        { name: "Snow Mittens", id: "#10136", priceTON: 0.38 },
+        { name: "Neko Helmet", id: "#4193", priceTON: 0.45 },
+        { name: "Signet Ring", id: "#394", priceTON: 0.55 },
+        { name: "Scared Cat", id: "#13300", priceTON: 0.58 },
+        { name: "Skull Flower", id: "#8173", priceTON: 0.66 },
+        { name: "Joyful Bundle", id: "#885", priceTON: 0.73 },
+        { name: "Bow Tie", id: "#5228", priceTON: 0.3 },
+        { name: "Gift Name", id: "#12345", priceTON: 0.25 },
+        { name: "Бандл • ID 37297", id: "🎁 7 подарков", priceTON: 2.5 }
+    ];
+
+    let cart = []; // { giftIndex, quantity } 
+    let userStars = 0;
+    let userTON = 0;
+
+    function renderGifts() {
+        const grid = document.getElementById('giftsGrid');
+        grid.innerHTML = '';
+        rawGifts.forEach((gift, idx) => {
+            const card = document.createElement('div');
+            card.className = 'gift-card';
+            card.innerHTML = `
+                <div class="gift-name">${gift.name}</div>
+                <div class="gift-id">${gift.id}</div>
+                <div class="gift-price"><span class="ton-symbol">⧫</span> ${gift.priceTON} TON</div>
+            `;
+            card.onclick = () => addToCart(idx);
+            grid.appendChild(card);
+        });
+    }
+
+    function addToCart(giftIndex) {
+        const existing = cart.find(item => item.giftIndex === giftIndex);
+        if (existing) {
+            existing.quantity++;
+        } else {
+            cart.push({ giftIndex, quantity: 1 });
+        }
+        updateCartUI();
+        showToast("➕ Добавлено в корзину");
+    }
+
+    function updateCartUI() {
+        const cartContainer = document.getElementById('cartItems');
+        const cartCountSpan = document.getElementById('cartCount');
+        const totalSpan = document.getElementById('cartTotal');
+        if (cart.length === 0) {
+            cartContainer.innerHTML = '<div class="cart-empty">Корзина пуста</div>';
+            cartCountSpan.innerText = '0';
+            totalSpan.innerText = '0';
+            return;
+        }
+        let total = 0;
+        let totalItems = 0;
+        let html = '';
+        cart.forEach(item => {
+            const gift = rawGifts[item.giftIndex];
+            const itemTotal = gift.priceTON * item.quantity;
+            total += itemTotal;
+            totalItems += item.quantity;
+            html += `<div style="display:flex; justify-content:space-between; margin-bottom:10px; font-size:0.85rem;">
+                        <span>${gift.name} ${gift.id} x${item.quantity}</span>
+                        <span>${itemTotal} TON</span>
+                        <button class="remove-one" data-index="${item.giftIndex}" style="background:#551111; border:none; color:white; border-radius:30px; padding:2px 10px;">✖</button>
+                    </div>`;
+        });
+        cartContainer.innerHTML = html;
+        cartCountSpan.innerText = totalItems;
+        totalSpan.innerText = total.toFixed(2);
+
+        document.querySelectorAll('.remove-one').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const giftIdx = parseInt(btn.dataset.index);
+                const cartItem = cart.find(i => i.giftIndex === giftIdx);
+                if(cartItem) {
+                    cartItem.quantity--;
+                    if(cartItem.quantity <= 0) {
+                        cart = cart.filter(i => i.giftIndex !== giftIdx);
+                    }
+                    updateCartUI();
+                }
+                e.stopPropagation();
+            });
+        });
+    }
+
+    function showToast(msg) {
+        let toast = document.createElement('div');
+        toast.innerText = msg;
+        toast.style.position = 'fixed';
+        toast.style.bottom = '80px';
+        toast.style.left = '20px';
+        toast.style.right = '20px';
+        toast.style.background = '#2e2e4e';
+        toast.style.padding = '12px';
+        toast.style.borderRadius = '40px';
+        toast.style.textAlign = 'center';
+        toast.style.zIndex = '2000';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 1500);
+    }
+
+    function openModal(message, onConfirm) {
+        const modal = document.getElementById('purchaseModal');
+        const overlay = document.getElementById('modalOverlay');
+        document.getElementById('modalText').innerText = message;
+        modal.classList.add('show');
+        overlay.classList.add('show');
+        const confirmBtn = document.getElementById('confirmPurchaseBtn');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const closeHandler = () => {
+            modal.classList.remove('show');
+            overlay.classList.remove('show');
+            confirmBtn.removeEventListener('click', confirmHandler);
+            closeModalBtn.removeEventListener('click', closeHandler);
+            overlay.removeEventListener('click', closeHandler);
+        };
+        const confirmHandler = () => {
+            onConfirm();
+            closeHandler();
+        };
+        confirmBtn.addEventListener('click', confirmHandler);
+        closeModalBtn.addEventListener('click', closeHandler);
+        overlay.addEventListener('click', closeHandler);
+    }
+
+    document.getElementById('checkoutBtn').addEventListener('click', () => {
+        if (cart.length === 0) {
+            showToast("Корзина пуста");
+            return;
+        }
+        const total = cart.reduce((sum, item) => sum + (rawGifts[item.giftIndex].priceTON * item.quantity), 0);
+        openModal(`Вы уверены, что хотите купить подарки на ${total.toFixed(2)} TON?`, () => {
+            if (userTON >= total) {
+                userTON -= total;
+                showToast(`✅ Куплено! Списанно ${total.toFixed(2)} TON`);
+                cart = [];
+                updateCartUI();
+                updateBalanceUI();
+            } else {
+                showToast(`❌ Недостаточно TON! Доступно: ${userTON.toFixed(2)} TON`);
+            }
+        });
+    });
+
+    document.getElementById('exchangeBtn').addEventListener('click', () => {
+        if (userStars >= 100) {
+            let exchangeAmount = Math.floor(userStars / 100);
+            userStars -= exchangeAmount * 100;
+            userTON += exchangeAmount;
+            updateBalanceUI();
+            showToast(`Обменяно ${exchangeAmount * 100} ⭐ → ${exchangeAmount} TON`);
+        } else {
+            showToast(`Не хватает Stars (нужно 100⭐). У вас ${userStars}⭐`);
+        }
+    });
+
+    function updateBalanceUI() {
+        document.getElementById('starsAmount').innerText = userStars;
+        // Баланс TON не выведен в топ-баре, но можно добавить при желании
+    }
+
+    // симуляция начального баланса
+    userStars = 350;
+    userTON = 5.25;
+    updateBalanceUI();
+
+    document.getElementById('withdrawBtn').addEventListener('click', () => showToast("🔧 Вывод подарков (демо)"));
+    document.getElementById('sellBtn').addEventListener('click', () => showToast("💰 Продажа подарков (демо)"));
+
+    renderGifts();
+    updateCartUI();
+</script>
+</body>
+</html>
